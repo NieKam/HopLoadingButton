@@ -6,6 +6,7 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.LinearInterpolator
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import com.google.android.material.button.MaterialButton
 
 /**
@@ -19,12 +20,13 @@ const val END_GRADIENT = 200F
 const val TINT_ALPHA = 112
 const val VISIBILITY_ANIM_DURATION = 380L
 
-
 class HopLoadingButton @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = androidx.appcompat.R.attr.buttonStyle
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = androidx.appcompat.R.attr.buttonStyle
 ) : MaterialButton(context, attrs, defStyleAttr) {
 
-    var loading = false
+    var isLoading = false
         set(value) {
             field = value
             updateAnimationState(value)
@@ -33,7 +35,7 @@ class HopLoadingButton @JvmOverloads constructor(
 
     var animationInterpolator: TimeInterpolator = LinearInterpolator()
         set(value) {
-            require(!loading) { "Don't change interpolator when animation is running" }
+            require(!isLoading) { "Don't change interpolator when animation is running" }
             field = value
         }
 
@@ -52,6 +54,7 @@ class HopLoadingButton @JvmOverloads constructor(
     private var lineSegmentSize: Float = 0F
     private var disableWhenLoading = false
     private var lineMoveAnimation: ValueAnimator? = null
+    private var segmentAnimation: ValueAnimator? = null
     private var loadingText: String? = null
     private var buttonText: String? = null
     private var progressDuration: Long = 0
@@ -61,7 +64,8 @@ class HopLoadingButton @JvmOverloads constructor(
         val a = context.obtainStyledAttributes(attrs, R.styleable.HopLoadingButton, defStyleAttr, 0)
 
         try {
-            disableWhenLoading = a.getBoolean(R.styleable.HopLoadingButton_disable_on_loading, false)
+            disableWhenLoading =
+                a.getBoolean(R.styleable.HopLoadingButton_disable_on_loading, false)
             loadingText = a.getString(R.styleable.HopLoadingButton_loading_text)
             buttonText = a.getString(R.styleable.HopLoadingButton_android_text)
             primaryColor = a.getColor(
@@ -77,7 +81,10 @@ class HopLoadingButton @JvmOverloads constructor(
                 context.resources.getDefaultStrokeWidth()
             )
             progressDuration =
-                a.getInteger(R.styleable.HopLoadingButton_progress_duration, MOVE_ANIMATION_DURATION_MS).toLong()
+                a.getInteger(
+                    R.styleable.HopLoadingButton_progress_duration,
+                    MOVE_ANIMATION_DURATION_MS
+                ).toLong()
             cachedLineWidth = lineWidth
         } finally {
             a.recycle()
@@ -96,8 +103,8 @@ class HopLoadingButton @JvmOverloads constructor(
     }
 
     override fun onDetachedFromWindow() {
+        isLoading = false
         super.onDetachedFromWindow()
-        loading = false
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -110,19 +117,19 @@ class HopLoadingButton @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        if (loading) {
+        if (isLoading) {
             canvas.drawPath(progressPath, paint)
         }
     }
 
-    fun setFirstColor(color: Int) {
+    fun setPrimaryColor(color: Int) {
         primaryColor = color
         progressPaint.color = primaryColor
         onPrimaryColorChange(primaryColor)
         invalidate()
     }
 
-    fun setSecondColor(color: Int) {
+    fun setSecondaryColor(color: Int) {
         secondaryColor = color
         tintPaint.let {
             it.color = secondaryColor
@@ -169,23 +176,32 @@ class HopLoadingButton @JvmOverloads constructor(
     }
 
     private fun startLoadingAnimation() {
-        require(loading)
-
+        require(isLoading)
         lineSegmentSize = totalLength / PATH_DASH_SEGMENTS
+        var offset = 0F
+        segmentAnimation = ObjectAnimator.ofFloat(lineSegmentSize / 2F, 0F).apply {
+            interpolator = FastOutSlowInInterpolator()
+            repeatCount = ValueAnimator.INFINITE
+            duration = (MOVE_ANIMATION_DURATION_MS / 2).toLong()
+            repeatMode = ValueAnimator.REVERSE
+            addUpdateListener { offset = it.animatedValue as Float }
+        }.also {
+            it.start()
+        }
+
         lineMoveAnimation = ObjectAnimator.ofFloat((totalLength * PATH_DASH_SEGMENTS), 0F).apply {
             repeatCount = ValueAnimator.INFINITE
             duration = progressDuration
             interpolator = animationInterpolator
             addUpdateListener {
                 paint.pathEffect = DashPathEffect(
-                    floatArrayOf(lineSegmentSize, lineSegmentSize),
+                    floatArrayOf(lineSegmentSize + offset, lineSegmentSize - offset),
                     it.animatedValue as Float
                 )
                 invalidate()
             }
         }.also {
             it.start()
-
         }
         paint.color = primaryColor
     }
@@ -194,6 +210,11 @@ class HopLoadingButton @JvmOverloads constructor(
         lineMoveAnimation?.let {
             it.cancel()
             lineMoveAnimation = null
+        }
+
+        segmentAnimation?.let {
+            it.cancel()
+            segmentAnimation = null
         }
     }
 
@@ -220,7 +241,7 @@ class HopLoadingButton @JvmOverloads constructor(
     }
 
     private fun reset() {
-        if (loading) {
+        if (isLoading) {
             stopLoadingAnimation()
             startLoadingAnimation()
         }
@@ -245,7 +266,6 @@ class HopLoadingButton @JvmOverloads constructor(
     }
 
     private fun show() {
-
         ObjectAnimator.ofFloat(0F, cachedLineWidth).apply {
             duration = VISIBILITY_ANIM_DURATION
             interpolator = AccelerateInterpolator()
@@ -265,7 +285,12 @@ class HopLoadingButton @JvmOverloads constructor(
         rect.set(0F, 0F, measuredWidth.toFloat(), measuredHeight.toFloat())
         val inset = adjustInset()
         rect.inset(inset, inset)
-        progressPath.addRoundRect(rect, cornerRadius.toFloat(), cornerRadius.toFloat(), Path.Direction.CW)
+        progressPath.addRoundRect(
+            rect,
+            cornerRadius.toFloat(),
+            cornerRadius.toFloat(),
+            Path.Direction.CW
+        )
         pathMeasure.setPath(progressPath, false)
         return pathMeasure.length
     }

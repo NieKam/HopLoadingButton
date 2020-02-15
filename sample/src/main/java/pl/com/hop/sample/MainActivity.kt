@@ -11,7 +11,7 @@ class MainActivity : AppCompatActivity() {
 
     private val clickListener = View.OnClickListener { btn ->
         val isLoading = !requireNotNull(loadingMap[btn.id])
-        (btn as HopLoadingButton).loading = isLoading
+        (btn as HopLoadingButton).isLoading = isLoading
         loadingMap[btn.id] = isLoading
     }
 
