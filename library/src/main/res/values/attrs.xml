@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="HopLoadingButton">
+
+        <attr name="primary_color" format="color" />
+        <attr name="secondary_color" format="color" />
+        <attr name="line_width" format="dimension" />
+        <attr name="loading_text" format="string" />
+        <attr name="progress_duration" format="integer" />
+        <attr name="disable_on_loading" format="boolean" />
+        <attr name="android:text" />
+
+    </declare-styleable>
+
+</resources>

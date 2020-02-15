@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_rootLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="center"
+    android:gravity="center"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <pl.com.hop.components.HopLoadingButton
+        android:id="@+id/btn1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:text="Hello World"
+        app:backgroundTint="@color/md_purple_600"
+        app:cornerRadius="8dp"
+        app:disable_on_loading="false"
+        app:line_width="4.5dp"
+        app:loading_text="Loading"
+        app:primary_color="@color/md_green_100"
+        app:secondary_color="@color/md_green_100" />
+
+    <pl.com.hop.components.HopLoadingButton
+        android:id="@+id/btn2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:text="Hello World"
+        app:backgroundTint="@color/md_orange_500"
+        app:cornerRadius="8dp"
+        app:disable_on_loading="true"
+        app:line_width="4dp"
+        app:loading_text="Loading"
+        app:primary_color="@color/md_cyan_500"
+        app:secondary_color="@color/md_red_500" />
+
+    <pl.com.hop.components.HopLoadingButton
+        android:id="@+id/btn3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:text="Hello World"
+        app:backgroundTint="@color/md_black_1000"
+        app:cornerRadius="8dp"
+        app:line_width="3dp"
+        app:primary_color="@color/md_white_1000"
+        app:secondary_color="@color/md_blue_500" />
+
+</androidx.appcompat.widget.LinearLayoutCompat>
