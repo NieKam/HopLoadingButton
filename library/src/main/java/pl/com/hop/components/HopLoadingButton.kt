@@ -14,7 +14,7 @@ import com.google.android.material.button.MaterialButton
  */
 
 private const val PATH_DASH_SEGMENTS = 2
-private const val MOVE_ANIMATION_DURATION_MS = 2400
+private const val MOVE_ANIMATION_DURATION_MS = 2200
 private const val PADDING = 40
 const val END_GRADIENT = 200F
 const val TINT_ALPHA = 112
@@ -28,9 +28,11 @@ class HopLoadingButton @JvmOverloads constructor(
 
     var isLoading = false
         set(value) {
-            field = value
-            updateAnimationState(value)
-            updateButtonState(value)
+            if (value != field) {
+                field = value
+                updateAnimationState(value)
+                updateButtonState(value)
+            }
         }
 
     var animationInterpolator: TimeInterpolator = LinearInterpolator()
@@ -46,6 +48,19 @@ class HopLoadingButton @JvmOverloads constructor(
     private val progressPath = Path()
     private val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val segments = floatArrayOf(0F, 0F)
+
+    private val hideAnimEndListener = object : AnimatorListenerAdapter() {
+        override fun onAnimationEnd(animation: Animator) {
+            stopLoadingAnimation()
+        }
+    }
+
+    private val showAnimStartListener = object : AnimatorListenerAdapter() {
+        override fun onAnimationStart(animation: Animator) {
+            startLoadingAnimation()
+        }
+    }
 
     private var totalLength: Float = 0F
     private var primaryColor: Int = 0
@@ -58,6 +73,7 @@ class HopLoadingButton @JvmOverloads constructor(
     private var loadingText: String? = null
     private var buttonText: String? = null
     private var progressDuration: Long = 0
+    private var isLoadingBeforeMeasure = false
 
     init {
         setLayerType(LAYER_TYPE_SOFTWARE, null)
@@ -102,6 +118,11 @@ class HopLoadingButton @JvmOverloads constructor(
         setPadding(PADDING, PADDING, PADDING, PADDING)
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        isLoadingBeforeMeasure = isLoading && lineSegmentSize == 0F
+    }
+
     override fun onDetachedFromWindow() {
         isLoading = false
         super.onDetachedFromWindow()
@@ -111,7 +132,10 @@ class HopLoadingButton @JvmOverloads constructor(
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         if (measuredWidth > 0 && measuredHeight > 0) {
             totalLength = transformPath()
-            lineSegmentSize = totalLength / PATH_DASH_SEGMENTS
+            if (isLoadingBeforeMeasure) {
+                isLoadingBeforeMeasure = false
+                reset()
+            }
         }
     }
 
@@ -177,16 +201,26 @@ class HopLoadingButton @JvmOverloads constructor(
 
     private fun startLoadingAnimation() {
         require(isLoading)
+        if (totalLength == 0F) {
+            return
+        }
+
         lineSegmentSize = totalLength / PATH_DASH_SEGMENTS
-        var offset = 0F
+        segments[0] = lineSegmentSize
+        segments[1] = lineSegmentSize
+
         segmentAnimation = ObjectAnimator.ofFloat(lineSegmentSize / 2F, 0F).apply {
             interpolator = FastOutSlowInInterpolator()
             repeatCount = ValueAnimator.INFINITE
             duration = (MOVE_ANIMATION_DURATION_MS / 2).toLong()
             repeatMode = ValueAnimator.REVERSE
-            addUpdateListener { offset = it.animatedValue as Float }
-        }.also {
-            it.start()
+            addUpdateListener {
+                val animValue = it.animatedValue as Float
+                segments[0] = lineSegmentSize + animValue
+                segments[1] = lineSegmentSize - animValue
+            }
+        }.also { animator ->
+            animator.start()
         }
 
         lineMoveAnimation = ObjectAnimator.ofFloat((totalLength * PATH_DASH_SEGMENTS), 0F).apply {
@@ -194,15 +228,13 @@ class HopLoadingButton @JvmOverloads constructor(
             duration = progressDuration
             interpolator = animationInterpolator
             addUpdateListener {
-                paint.pathEffect = DashPathEffect(
-                    floatArrayOf(lineSegmentSize + offset, lineSegmentSize - offset),
-                    it.animatedValue as Float
-                )
+                paint.pathEffect = DashPathEffect(segments, it.animatedValue as Float)
                 invalidate()
             }
-        }.also {
-            it.start()
+        }.also { animator ->
+            animator.start()
         }
+
         paint.color = primaryColor
     }
 
@@ -254,14 +286,8 @@ class HopLoadingButton @JvmOverloads constructor(
         ObjectAnimator.ofFloat(lineWidth, 0F).apply {
             duration = VISIBILITY_ANIM_DURATION
             interpolator = AccelerateInterpolator()
-            addUpdateListener { l ->
-                setLineWidth(l.animatedValue as Float)
-            }
-            addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator?) {
-                    stopLoadingAnimation()
-                }
-            })
+            addUpdateListener { l -> setLineWidth(l.animatedValue as Float) }
+            addListener(hideAnimEndListener)
         }.start()
     }
 
@@ -269,14 +295,8 @@ class HopLoadingButton @JvmOverloads constructor(
         ObjectAnimator.ofFloat(0F, cachedLineWidth).apply {
             duration = VISIBILITY_ANIM_DURATION
             interpolator = AccelerateInterpolator()
-            addUpdateListener { l ->
-                setLineWidth(l.animatedValue as Float)
-            }
-            addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationStart(animation: Animator?) {
-                    startLoadingAnimation()
-                }
-            })
+            addUpdateListener { l -> setLineWidth(l.animatedValue as Float) }
+            addListener(showAnimStartListener)
         }.start()
     }
 
