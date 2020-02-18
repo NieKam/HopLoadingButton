@@ -1,7 +1,7 @@
 ext {
     PUBLISH_GROUP_ID = 'pl.com.hop.components'
     PUBLISH_ARTIFACT_ID = 'HopLoadingButton'
-    PUBLISH_VERSION = '1.1.0-alpha01'
+    PUBLISH_VERSION = '1.1.2'
 }
 
 apply plugin: 'com.android.library'
