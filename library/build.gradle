@@ -1,7 +1,7 @@
 ext {
     PUBLISH_GROUP_ID = 'pl.com.hop.components'
     PUBLISH_ARTIFACT_ID = 'HopLoadingButton'
-    PUBLISH_VERSION = '1.0.2'
+    PUBLISH_VERSION = '1.0.3'
 }
 
 apply plugin: 'com.android.library'
@@ -15,14 +15,15 @@ android {
     defaultConfig {
         minSdkVersion 17
         targetSdkVersion 29
-        versionCode 2
-        versionName "1.0.2"
+        versionCode 3
+        versionName "1.0.3"
     }
     buildTypes {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             debuggable false
+            consumerProguardFiles 'proguard-rules.pro'
         }
     }
 }
