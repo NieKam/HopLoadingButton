@@ -19,6 +19,8 @@ private const val PADDING = 40
 const val END_GRADIENT = 200F
 const val TINT_ALPHA = 112
 const val VISIBILITY_ANIM_DURATION = 380L
+const val DEFAULT_INSET = 6 // dp
+const val WIDTH_MARGIN = 10F // px
 
 class HopLoadingButton @JvmOverloads constructor(
     context: Context,
@@ -302,7 +304,19 @@ class HopLoadingButton @JvmOverloads constructor(
 
     private fun transformPath(): Float {
         progressPath.reset()
-        rect.set(0F, 0F, measuredWidth.toFloat(), measuredHeight.toFloat())
+        val computedInsetBottom =
+            if (insetBottom == 0) DEFAULT_INSET.dpToPx else insetBottom.toFloat()
+        val computedInsetTop = if (insetTop == 0) DEFAULT_INSET.dpToPx else insetTop.toFloat()
+
+        // Don't use margin if corner radius is specified
+        val widthCorrection = if (cornerRadius == 0) { WIDTH_MARGIN } else { 0F }
+
+        rect.set(
+            widthCorrection,
+            computedInsetTop,
+            measuredWidth.toFloat() - widthCorrection,
+            measuredHeight.toFloat() - computedInsetBottom
+        )
         val inset = adjustInset()
         rect.inset(inset, inset)
         progressPath.addRoundRect(
