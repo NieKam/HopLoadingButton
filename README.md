@@ -12,7 +12,7 @@ Cool loading effect on Material Button.
 
 The Gradle dependency is available via JitPack.
 
-The minimum API level supported by this library is API 14.
+The minimum API level supported by this library is API 17.
 
 ```gradle
 allprojects {
@@ -25,10 +25,8 @@ allprojects {
 ```gradle
 dependencies {
   implementation 'com.github.NieKam:HopLoadingButton:X.X.X'
-  implementation 'com.google.android.material:material:1.1.0'
 }
 ```
-This view extends Google Material Button Component. Make sure you added material components dependency to your project.
 
 # Info
 
@@ -57,7 +55,6 @@ All attributes are optional.
         android:layout_margin="12dp"
         android:text="Hello World"
         app:backgroundTint="@color/md_purple_600"
-        app:cornerRadius="8dp"
         app:disable_on_loading="false"
         app:line_width="4dp"
         app:loading_text="Loading"
